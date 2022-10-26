@@ -187,9 +187,15 @@
   //   }); // should be 5, regardless of the iterator function passed in
   //          No accumulator is given so the first element is used.
   _.reduce = function(collection, iterator, accumulator) {
-    _.each(collection, function(item, accumulator) {
-      iterator(accumulator, item);
+    if (accumulator === undefined) {
+      accumulator = collection[0];
+      collection = collection.slice(1);
+    }
+    _.each(collection, function(item) {
+      accumulator = iterator(accumulator, item);
     });
+
+    return accumulator;
   };
 
   // Determine if the array or object contains a given value (using `===`).
@@ -208,12 +214,41 @@
   // Determine whether all of the elements match a truth test.
   _.every = function(collection, iterator) {
     // TIP: Try re-using reduce() here.
+    var accumulator = _.reduce(collection, function(accumulator, item) {
+      if (iterator === undefined) {
+        if (!item) {
+          accumulator = false;
+        }
+      } else {
+        if (!iterator(item)) {
+          accumulator = false;
+        }
+      }
+
+      return accumulator;
+    }, true);
+    return accumulator;
   };
 
   // Determine whether any of the elements pass a truth test. If no iterator is
   // provided, provide a default one
   _.some = function(collection, iterator) {
     // TIP: There's a very clever way to re-use every() here.
+    var accumulator = _.reduce(collection, function(accumulator, item) {
+      if (iterator === undefined) {
+        if (item) {
+          accumulator = true;
+        }
+      } else {
+        if (iterator(item)) {
+          accumulator = true;
+        }
+      }
+
+      return accumulator;
+    }, false);
+    return accumulator;
+
   };
 
 
@@ -236,11 +271,33 @@
   //     bla: "even more stuff"
   //   }); // obj1 now contains key1, key2, key3 and bla
   _.extend = function(obj) {
+    if (arguments.length > 1) {
+      for (var i = 1; i < arguments.length; i++) {
+        for (var key in arguments[i]) {
+          obj[key] = arguments[i][key];
+        }
+      }
+      return obj;
+    } else {
+      return obj;
+    }
   };
 
   // Like extend, but doesn't ever overwrite a key that already
   // exists in obj
   _.defaults = function(obj) {
+    if (arguments.length > 1) {
+      for (var i = 1; i < arguments.length; i++) {
+        for (var key in arguments[i]) {
+          if (obj[key] === undefined) {
+            obj[key] = arguments[i][key];
+          }
+        }
+      }
+      return obj;
+    } else {
+      return obj;
+    }
   };
 
 
@@ -284,6 +341,16 @@
   // already computed the result for the given argument and return that value
   // instead if possible.
   _.memoize = function(func) {
+    var alreadyCalled = arguments[1] || [];
+
+
+    if (alreadyCalled.contains(func)) {
+      return;
+    } else {
+      alreadyCalled.push(func);
+      _.memoize(func, alreadyCalled);
+    }
+
   };
 
   // Delays a function for the given number of milliseconds, and then calls
@@ -293,6 +360,17 @@
   // parameter. For example _.delay(someFunction, 500, 'a', 'b') will
   // call someFunction('a', 'b') after 500ms
   _.delay = function(func, wait) {
+    if (arguments.length > 2) {
+      var funcArguments = [];
+      for (var i = 2; i < arguments.length; i++) {
+        funcArguments.push(arguments[i]);
+      }
+      setTimeout(function () {
+        func.apply(this, funcArguments);
+      }, wait);
+    } else {
+      setTimeout(func, wait);
+    }
   };
 
 
@@ -307,6 +385,24 @@
   // input array. For a tip on how to make a copy of an array, see:
   // http://mdn.io/Array.prototype.slice
   _.shuffle = function(array) {
+    var mixedArray = [];
+    var index = [];
+
+    var random = function () {
+      return Math.floor(Math.random() * array.length);
+    };
+
+    while (mixedArray.length < array.length) {
+
+      var randomIndex = random();
+      while (index.includes(randomIndex)) {
+        randomIndex = random();
+      }
+
+      mixedArray.push(array[randomIndex]);
+      index.push(randomIndex);
+    }
+    return mixedArray;
   };
 
 
